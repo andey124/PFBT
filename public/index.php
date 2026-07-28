@@ -1,6 +1,5 @@
 <?php
-require __DIR__ . '/../private/config.php';
-require __DIR__ . '/helpers.php';
+require __DIR__ . '/../src/bootstrap.php';
 
 $movies = $pdo->query(
     'SELECT m.*, COUNT(r.id) AS rating_count, AVG(r.score) AS rating_avg

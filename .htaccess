@@ -1,0 +1,21 @@
+# Nur falls der Webroot NICHT auf public/ zeigt (z.B. Installation als
+# Unterordner xyz.de/pftb): alles nach public/ umbiegen, damit src/, db/
+# und tests/ nicht ausgeliefert werden.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+# Unterordner-Installation: Pfad hier eintragen, sonst auskommentiert lassen.
+# RewriteBase /pftb
+RewriteCond %{REQUEST_URI} !/public/
+RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Zweite Absicherung, falls mod_rewrite fehlt.
+<FilesMatch "\.(sql|md|sample\.php)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

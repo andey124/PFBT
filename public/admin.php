@@ -1,18 +1,33 @@
 <?php
-require __DIR__ . '/../private/config.php';
-require __DIR__ . '/helpers.php';
+require __DIR__ . '/../src/bootstrap.php';
 
 $error = null;
 
+$locked = 0;
+
 if (isset($_POST['password'])) {
-    if (hash_equals($adminPassword, (string)$_POST['password'])) {
+    $locked = rl_check('admin');
+    if ($locked > 0) {
+        http_response_code(429);
+        $error = 'Zu viele Versuche. Bitte ' . retry_msg($locked) . ' erneut probieren.';
+    } elseif (password_verify((string)$_POST['password'], $adminPasswordHash)) {
+        session_regenerate_id(true);
         $_SESSION['is_admin'] = true;
     } else {
+        rl_hit('admin');
         $error = 'Falsches Passwort.';
+        error_log('PFBT: fehlgeschlagener Admin-Login von ' . $clientIp);
+        // Sperre sofort anzeigen, wenn das gerade der letzte freie Versuch war.
+        $locked = rl_check('admin');
+        if ($locked > 0) {
+            http_response_code(429);
+            $error = 'Zu viele Versuche. Bitte ' . retry_msg($locked) . ' erneut probieren.';
+        }
     }
 }
 if (isset($_GET['logout'])) {
-    unset($_SESSION['is_admin']);
+    $_SESSION = [];
+    session_destroy();
 }
 
 $admin = !empty($_SESSION['is_admin']);
@@ -27,9 +42,9 @@ if ($admin) {
         if (!hash_equals($csrf, (string)($_POST['csrf'] ?? ''))) {
             $error = 'Ungültiges Token, bitte neu laden.';
         } elseif ($_POST['action'] === 'create') {
-            $title = trim((string)$_POST['title']);
-            $year  = filter_var($_POST['year'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1880, 'max_range' => 2100]]);
-            $date  = (string)$_POST['screened_on'];
+            $title = trim((string)($_POST['title'] ?? ''));
+            $year  = filter_var($_POST['year'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1880, 'max_range' => 2100]]);
+            $date  = (string)($_POST['screened_on'] ?? '');
             $avgIn = trim((string)($_POST['legacy_avg'] ?? ''));
             $avg   = $avgIn === '' ? null : filter_var(str_replace(',', '.', $avgIn), FILTER_VALIDATE_FLOAT, ['options' => ['min_range' => 1, 'max_range' => 10]]);
 
@@ -42,19 +57,26 @@ if ($admin) {
                     'INSERT INTO movies (public_id, title, year, screened_on, director, genre, poster_url, note, legacy_avg, is_open)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                 )->execute([
-                    bin2hex(random_bytes(6)), $title, $year, date('Y-m-d', strtotime($date)),
-                    trim((string)$_POST['director']) ?: null,
-                    trim((string)$_POST['genre']) ?: null,
-                    trim((string)$_POST['poster_url']) ?: null,
-                    trim((string)$_POST['note']) ?: null,
+                    bin2hex(random_bytes(6)),
+                    mb_substr($title, 0, 200), $year, date('Y-m-d', strtotime($date)),
+                    mb_substr(trim((string)($_POST['director'] ?? '')), 0, 120) ?: null,
+                    mb_substr(trim((string)($_POST['genre'] ?? '')), 0, 120) ?: null,
+                    valid_poster_url($_POST['poster_url'] ?? ''),
+                    trim((string)($_POST['note'] ?? '')) ?: null,
                     $avg,
                     $avg === null ? 1 : 0,
                 ]);
+                header('Location: admin.php', true, 303); // kein Doppel-Anlegen beim Reload
+                exit;
             }
         } elseif ($_POST['action'] === 'toggle') {
             $pdo->prepare('UPDATE movies SET is_open = 1 - is_open WHERE id = ?')->execute([(int)$_POST['id']]);
+            header('Location: admin.php', true, 303);
+            exit;
         } elseif ($_POST['action'] === 'delete') {
             $pdo->prepare('DELETE FROM movies WHERE id = ?')->execute([(int)$_POST['id']]);
+            header('Location: admin.php', true, 303);
+            exit;
         }
     }
 
@@ -78,10 +100,12 @@ if ($admin) {
 <?php if ($error): ?><p class="error"><?= e($error) ?></p><?php endif; ?>
 
 <?php if (!$admin): ?>
+  <?php if (!$locked): ?>
   <form method="post">
     <label>Passwort<input type="password" name="password" autofocus required></label>
     <button type="submit">Anmelden</button>
   </form>
+  <?php endif; ?>
 <?php else: ?>
   <h2>Neuer Film</h2>
   <form method="post" class="card">
@@ -112,7 +136,7 @@ if ($admin) {
         <form method="post"><input type="hidden" name="csrf" value="<?= e($csrf) ?>">
           <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$m['id'] ?>">
           <button type="submit"><?= $m['is_open'] ? 'Schliessen' : 'Öffnen' ?></button></form>
-        <form method="post" onsubmit="return confirm('Film und alle Bewertungen löschen?')">
+        <form method="post" data-confirm="Film und alle Bewertungen löschen?">
           <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
           <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$m['id'] ?>">
           <button type="submit" class="danger">Löschen</button></form>
@@ -122,6 +146,7 @@ if ($admin) {
   </table>
 
   <p class="hint"><a href="index.php">Übersicht</a> · <a href="?logout=1">Abmelden</a></p>
+  <script src="admin.js"></script>
 <?php endif; ?>
 </body>
 </html>

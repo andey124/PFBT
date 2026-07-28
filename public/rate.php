@@ -1,39 +1,56 @@
 <?php
-require __DIR__ . '/../private/config.php';
-require __DIR__ . '/helpers.php';
+require __DIR__ . '/../src/bootstrap.php';
 
 $id = (string)($_GET['m'] ?? '');
 $stmt = $pdo->prepare('SELECT id, title, year, is_open FROM movies WHERE public_id = ?');
 $stmt->execute([$id]);
 $movie = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$error = null;
-$done  = false;
+$error  = null;
+$done   = false;
+$locked = 0;
 $cookie = 'rated_' . preg_replace('/[^a-f0-9]/', '', $id);
 
 if ($movie && $movie['is_open']) {
     if (isset($_POST['pin'])) {
-        if (hash_equals($ratingPin, (string)$_POST['pin'])) {
+        $locked = rl_check('pin');
+        if ($locked > 0) {
+            http_response_code(429);
+            $error = 'Zu viele Fehlversuche. Bitte ' . retry_msg($locked) . ' erneut probieren.';
+        } elseif (hash_equals((string)$ratingPin, (string)$_POST['pin'])) {
+            session_regenerate_id(true);
             $_SESSION['pin_ok'] = true;
         } else {
+            rl_hit('pin');
             $error = 'Falsche PIN.';
+            $locked = rl_check('pin');
+            if ($locked > 0) {
+                http_response_code(429);
+                $error = 'Zu viele Fehlversuche. Bitte ' . retry_msg($locked) . ' erneut probieren.';
+            }
         }
     } elseif (isset($_POST['score'])) {
         $score = valid_score($_POST['score']);
+        $locked = rl_check('rating');
         if (empty($_SESSION['pin_ok'])) {
             $error = 'Bitte zuerst die PIN eingeben.';
         } elseif (isset($_COOKIE[$cookie])) {
             $error = 'Du hast diesen Film schon bewertet.';
+        } elseif ($locked > 0) {
+            http_response_code(429);
+            $error = 'Zu viele Bewertungen aus diesem Netz. Bitte ' . retry_msg($locked) . ' erneut probieren.';
         } elseif ($score === false) {
             $error = 'Bitte eine Zahl von 1 bis 10 wählen.';
         } else {
             $name = trim((string)($_POST['name'] ?? ''));
             $pdo->prepare('INSERT INTO ratings (movie_id, name, score) VALUES (?, ?, ?)')
                 ->execute([$movie['id'], $name === '' ? null : mb_substr($name, 0, 60), $score]);
+            rl_hit('rating');
             setcookie($cookie, '1', [
                 'expires'  => time() + 31536000,
-                'path'     => '/',
+                'path'     => $cookiePath,
                 'httponly' => true,
+                'secure'   => $https,
                 'samesite' => 'Lax',
             ]);
             $done = true;
@@ -66,6 +83,8 @@ if ($movie && $movie['is_open']) {
     <p><a href="index.php">Zur Übersicht</a></p>
   <?php elseif (isset($_COOKIE[$cookie])): ?>
     <p>Du hast diesen Film schon bewertet.</p>
+    <p><a href="index.php">Zur Übersicht</a></p>
+  <?php elseif ($locked): ?>
     <p><a href="index.php">Zur Übersicht</a></p>
   <?php elseif (empty($_SESSION['pin_ok'])): ?>
     <form method="post">

@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../private/config.php';
+require __DIR__ . '/../src/bootstrap.php';
 require __DIR__ . '/lib/phpqrcode.php';
 
 $id = (string)($_GET['m'] ?? '');

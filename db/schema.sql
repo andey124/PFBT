@@ -22,3 +22,13 @@ CREATE TABLE ratings (
   FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
   CHECK (score BETWEEN 1 AND 10)
 ) DEFAULT CHARSET=utf8mb4;
+
+-- Eine Zeile pro Versuch statt Zaehler: keine Race Condition zwischen
+-- parallelen Requests, gleiches SQL unter MySQL und SQLite (Tests).
+-- Bestehende Installationen: nur diesen Block nachziehen.
+CREATE TABLE rate_limits (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  bucket     CHAR(64) NOT NULL,   -- sha256(scope|ip), keine IP im Klartext
+  created_at INT      NOT NULL,   -- Unix-Timestamp, keine Zeitzonen-Fallen
+  KEY bucket_time (bucket, created_at)
+) DEFAULT CHARSET=utf8mb4;
