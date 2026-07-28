@@ -6,24 +6,25 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
-// Default: <vhost>/filmconfig.php, also eine Ebene ueber httpdocs/ (Plesk-Layout
-// httpdocs/film/src/ -> dreimal hoch). Override via $_SERVER, weil unter PHP-FPM
-// Apaches SetEnv dort landet und nicht in getenv().
-$configPath = ($_SERVER['PFBT_CONFIG'] ?? '') ?: (getenv('PFBT_CONFIG') ?: dirname(__DIR__, 3) . '/filmconfig.php');
+// Default: <repo>/private/config.php. Liegt bei Docroot=public/ ausserhalb des
+// Webroots; bei Unterordner-Installation schuetzt private/.htaccess.
+// Override via $_SERVER, weil unter PHP-FPM Apaches SetEnv dort landet, nicht in getenv().
+$configPath = ($_SERVER['PFBT_CONFIG'] ?? '') ?: (getenv('PFBT_CONFIG') ?: dirname(__DIR__) . '/private/config.php');
 $configReal = realpath($configPath);
-$docRoot    = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
 
 if ($configReal === false) {
     http_response_code(500);
     error_log("PFBT: config nicht gefunden: $configPath");
     exit('Konfiguration fehlt.');
 }
-// Bei Installation im Unterordner (xyz.de/pftb) landet der Default-Pfad sonst
-// im Docroot - die DB-Zugangsdaten waeren dann per Browser abrufbar.
-if ($docRoot !== false && strpos($configReal, $docRoot . DIRECTORY_SEPARATOR) === 0) {
+// Liegt die Config im Docroot (Unterordner-Installation), muss private/.htaccess
+// den Zugriff sperren. Fehlt die Datei, waeren die DB-Zugangsdaten je nach
+// Server-Konfiguration abrufbar - dann lieber gar nicht erst starten.
+if (dirname($configReal) === realpath(dirname(__DIR__) . '/private')
+    && !is_file(dirname($configReal) . '/.htaccess')) {
     http_response_code(500);
-    error_log("PFBT: config liegt im Docroot ($configReal) - verschieben und PFBT_CONFIG setzen.");
-    exit('Konfiguration liegt im Webroot. Bitte verschieben.');
+    error_log('PFBT: private/.htaccess fehlt - Config waere ungeschuetzt.');
+    exit('Schutzdatei private/.htaccess fehlt.');
 }
 
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
