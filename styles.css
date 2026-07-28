@@ -1,0 +1,47 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; padding: 1.5rem; max-width: 46rem;
+  font: 16px/1.5 system-ui, sans-serif;
+  background: #14151a; color: #e8e8ea;
+}
+h1 { font-size: 1.6rem; margin: 0 0 1rem; }
+h2 { font-size: 1.1rem; margin: 2rem 0 .75rem; color: #9aa0aa; font-weight: 600; }
+h3 { margin: 0 0 .25rem; font-size: 1.15rem; }
+a { color: #7cc4ff; }
+.year { color: #9aa0aa; font-weight: 400; }
+.hint { color: #9aa0aa; font-size: .85rem; }
+.error { background: #4a1f24; padding: .6rem .8rem; border-radius: .4rem; }
+.ok { background: #1f4a2c; padding: .6rem .8rem; border-radius: .4rem; }
+
+.card {
+  display: flex; gap: 1rem; align-items: flex-start;
+  background: #1d1f26; border-radius: .6rem; padding: 1rem; margin-bottom: .75rem;
+}
+.card .body { flex: 1; min-width: 0; }
+.card.current { flex-direction: column; align-items: center; text-align: center; }
+.qr { width: 260px; max-width: 100%; height: auto; image-rendering: pixelated; background: #fff; padding: .5rem; border-radius: .4rem; }
+.poster { width: 70px; border-radius: .3rem; }
+.meta { color: #9aa0aa; font-size: .9rem; margin: .25rem 0; }
+.score { margin: .4rem 0; font-size: 1.1rem; }
+.note { margin: .4rem 0; font-size: .9rem; }
+.ratings { margin: .4rem 0 0; padding-left: 1.1rem; color: #c3c7ce; font-size: .9rem; }
+
+form.card { flex-direction: column; }
+label { display: block; margin-bottom: .7rem; color: #9aa0aa; font-size: .85rem; }
+input, select, textarea {
+  display: block; width: 100%; margin-top: .25rem; padding: .55rem;
+  font: inherit; color: #e8e8ea; background: #14151a;
+  border: 1px solid #363943; border-radius: .35rem;
+}
+button {
+  font: inherit; padding: .55rem 1.1rem; cursor: pointer;
+  color: #14151a; background: #7cc4ff; border: 0; border-radius: .35rem;
+}
+button.danger { background: #e0707a; }
+
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: .5rem .4rem; border-bottom: 1px solid #2a2d35; }
+th { color: #9aa0aa; font-weight: 600; }
+.actions { display: flex; gap: .4rem; }
+.actions button { padding: .3rem .6rem; font-size: .8rem; }
