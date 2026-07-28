@@ -6,7 +6,10 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
-$configPath = getenv('PFBT_CONFIG') ?: dirname(__DIR__) . '/../private/config.php';
+// Default: <vhost>/filmconfig.php, also eine Ebene ueber httpdocs/ (Plesk-Layout
+// httpdocs/film/src/ -> dreimal hoch). Override via $_SERVER, weil unter PHP-FPM
+// Apaches SetEnv dort landet und nicht in getenv().
+$configPath = ($_SERVER['PFBT_CONFIG'] ?? '') ?: (getenv('PFBT_CONFIG') ?: dirname(__DIR__, 3) . '/filmconfig.php');
 $configReal = realpath($configPath);
 $docRoot    = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
 

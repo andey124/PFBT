@@ -8,11 +8,12 @@ sich mit reinem Durchschnitt nachtragen.
 ## Setup
 
 1. `db/schema.sql` in die Datenbank importieren.
-2. `config.sample.php` kopieren nach `../private/config.php` (**ausserhalb** des Webroots)
+2. `config.sample.php` kopieren nach `filmconfig.php` **eine Ebene über dem Docroot**
    und ausfüllen: DB-Zugang, `$adminPasswordHash`, `$ratingPin`, `$baseUrl`.
    Hash erzeugen: `php -r "echo password_hash('geheim', PASSWORD_DEFAULT);"`.
-   Liegt die Config woanders: `SetEnv PFBT_CONFIG /pfad/zu/config.php` (sonst wird
-   `<repo>/../private/config.php` erwartet). Nur noch dieser eine Pfad ist relevant.
+   Erwartet wird `<repo>/../../filmconfig.php` — beim Plesk-Layout
+   `httpdocs/film/` also `<vhost>/filmconfig.php`. Liegt die Config woanders:
+   `SetEnv PFBT_CONFIG /pfad/zu/config.php`.
    Landet die Config im Webroot, bricht die App mit HTTP 500 ab, statt die
    Zugangsdaten auszuliefern.
 3. Repo hochladen und den **Webroot auf `public/` zeigen lassen**. Geht das beim Hoster
@@ -25,10 +26,11 @@ Braucht PHP 7.4+ mit PDO/MySQL und GD (für die QR-PNGs).
 
 Der Webroot lässt sich dann nicht auf `public/` legen, also trägt `.htaccess` die Arbeit:
 
-1. Im Root-`.htaccess` die Zeile `RewriteBase /pftb` einkommentieren und anpassen.
-2. Die Config **ausserhalb** des Docroots ablegen und `PFBT_CONFIG` setzen — der
-   Default-Pfad läge sonst unter `httpdocs/private/` und wäre per Browser abrufbar.
-3. `$baseUrl` inklusive Unterordner eintragen (`https://xyz.de/pftb`).
+1. Im Root-`.htaccess` `RewriteBase` auf den Unterordner setzen (steht auf `/film`).
+2. `$baseUrl` inklusive Unterordner eintragen (`https://xyz.de/film`).
+
+Der Default-Config-Pfad passt genau auf dieses Layout. Liegt das Repo *nicht* in
+einem Unterordner des Docroots, stimmt er nicht — dann `PFBT_CONFIG` setzen.
 
 `src/`, `db/` und `tests/` haben zusätzlich ein eigenes `.htaccess` mit `Require all
 denied`, damit sie auch ohne mod_rewrite nicht ausgeliefert werden.
