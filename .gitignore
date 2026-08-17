@@ -1,4 +1,5 @@
 /.claude
 config.php
-/private/
+/private/*
+!/private/.htaccess
 *.log

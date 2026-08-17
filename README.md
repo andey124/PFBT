@@ -8,11 +8,11 @@ sich mit reinem Durchschnitt nachtragen.
 ## Setup
 
 1. `db/schema.sql` in die Datenbank importieren.
-2. `config.sample.php` kopieren nach `../private/config.php` (**ausserhalb** des Webroots)
-   und ausfüllen: DB-Zugang, `$adminPasswordHash`, `$ratingPin`, `$baseUrl`.
+2. `config.sample.php` kopieren nach `private/config.php` (im Repo) und ausfüllen:
+   DB-Zugang, `$adminPasswordHash`, `$ratingPin`, `$baseUrl`.
    Hash erzeugen: `php -r "echo password_hash('geheim', PASSWORD_DEFAULT);"`.
-   Liegt die Config woanders: `SetEnv PFBT_CONFIG /pfad/zu/config.php` (sonst wird
-   `<repo>/../private/config.php` erwartet). Nur noch dieser eine Pfad ist relevant.
+   `private/.htaccess` sperrt den Ordner; die App startet nicht, wenn die Datei fehlt.
+   Liegt die Config woanders: `SetEnv PFBT_CONFIG /pfad/zu/config.php`.
    Landet die Config im Webroot, bricht die App mit HTTP 500 ab, statt die
    Zugangsdaten auszuliefern.
 3. Repo hochladen und den **Webroot auf `public/` zeigen lassen**. Geht das beim Hoster
@@ -25,13 +25,14 @@ Braucht PHP 7.4+ mit PDO/MySQL und GD (für die QR-PNGs).
 
 Der Webroot lässt sich dann nicht auf `public/` legen, also trägt `.htaccess` die Arbeit:
 
-1. Im Root-`.htaccess` die Zeile `RewriteBase /pftb` einkommentieren und anpassen.
-2. Die Config **ausserhalb** des Docroots ablegen und `PFBT_CONFIG` setzen — der
-   Default-Pfad läge sonst unter `httpdocs/private/` und wäre per Browser abrufbar.
-3. `$baseUrl` inklusive Unterordner eintragen (`https://xyz.de/pftb`).
+1. Im Root-`.htaccess` `RewriteBase` auf den Unterordner setzen (steht auf `/film`).
+2. `$baseUrl` inklusive Unterordner eintragen (`https://xyz.de/film`).
 
-`src/`, `db/` und `tests/` haben zusätzlich ein eigenes `.htaccess` mit `Require all
-denied`, damit sie auch ohne mod_rewrite nicht ausgeliefert werden.
+`private/` liegt dann im Docroot und hängt an `private/.htaccess`. Nach dem Upload
+einmal `https://xyz.de/film/private/config.php` aufrufen: muss 403 liefern.
+
+`private/`, `src/`, `db/` und `tests/` haben zusätzlich ein eigenes `.htaccess` mit
+`Require all denied`, damit sie auch ohne mod_rewrite nicht ausgeliefert werden.
 
 ### Update einer bestehenden Installation
 
