@@ -16,7 +16,7 @@ CREATE TABLE movies (
 CREATE TABLE ratings (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   movie_id   INT         NOT NULL,
-  name       VARCHAR(60) NULL,
+  name       VARCHAR(60) NOT NULL,
   score      TINYINT     NOT NULL,
   created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,

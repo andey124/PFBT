@@ -6,7 +6,9 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
-$configPath = getenv('PFBT_CONFIG') ?: dirname(__DIR__) . '/../private/config.php';
+// $_SERVER zuerst: unter PHP-FPM (Plesk/netcup) landet "SetEnv PFBT_CONFIG ..."
+// aus der .htaccess dort, nicht zuverlaessig in getenv().
+$configPath = $_SERVER['PFBT_CONFIG'] ?? (getenv('PFBT_CONFIG') ?: dirname(__DIR__) . '/../private/config.php');
 $configReal = realpath($configPath);
 $docRoot    = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
 

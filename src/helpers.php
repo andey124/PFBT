@@ -13,6 +13,13 @@ function valid_score($v)
     return filter_var($v, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 10]]);
 }
 
+/** Gibt den getrimmten Namen zurueck, sonst false. */
+function valid_name($v)
+{
+    $name = trim((string)$v);
+    return $name === '' ? false : mb_substr($name, 0, 60);
+}
+
 /** Echte Bewertungen schlagen den nachgetragenen Durchschnitt. Null = keine Wertung. */
 function movie_avg(array $m)
 {

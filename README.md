@@ -1,7 +1,7 @@
 # Filmabend – Bewertungstool
 
 Winziges PHP-Tool: Admin legt einen Film an, auf der Übersicht erscheint ein QR-Code,
-Gäste scannen ihn, geben die PIN ein und bewerten von 1–10 (Name optional). Danach
+Gäste scannen ihn, geben die PIN ein und bewerten von 1–10 (Name erforderlich). Danach
 wandert der Film ins Archiv mit Durchschnitt und Einzelbewertungen. Alte Filme lassen
 sich mit reinem Durchschnitt nachtragen.
 
@@ -37,8 +37,15 @@ denied`, damit sie auch ohne mod_rewrite nicht ausgeliefert werden.
 
 Nur den `rate_limits`-Block aus `db/schema.sql` nachziehen und `$rateLimits` /
 `$trustedProxies` aus `config.sample.php` in die eigene Config übernehmen (fehlen sie,
-greifen die Defaults). `$adminPassword` heisst jetzt `$adminPasswordHash` und erwartet
-einen `password_hash`-Wert.
+greifen die Defaults). Für die Pflichtangabe des Namens bestehende anonyme Bewertungen
+vor der Schemaänderung übernehmen:
+
+```sql
+UPDATE ratings SET name = 'Anonym' WHERE name IS NULL OR TRIM(name) = '';
+ALTER TABLE ratings MODIFY name VARCHAR(60) NOT NULL;
+```
+
+`$adminPassword` heisst jetzt `$adminPasswordHash` und erwartet einen `password_hash`-Wert.
 
 ## Struktur
 

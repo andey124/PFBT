@@ -42,18 +42,22 @@ if ($movie && $movie['is_open']) {
         } elseif ($score === false) {
             $error = 'Bitte eine Zahl von 1 bis 10 wählen.';
         } else {
-            $name = trim((string)($_POST['name'] ?? ''));
-            $pdo->prepare('INSERT INTO ratings (movie_id, name, score) VALUES (?, ?, ?)')
-                ->execute([$movie['id'], $name === '' ? null : mb_substr($name, 0, 60), $score]);
-            rl_hit('rating');
-            setcookie($cookie, '1', [
-                'expires'  => time() + 31536000,
-                'path'     => $cookiePath,
-                'httponly' => true,
-                'secure'   => $https,
-                'samesite' => 'Lax',
-            ]);
-            $done = true;
+            $name = valid_name($_POST['name'] ?? '');
+            if ($name === false) {
+                $error = 'Bitte einen Namen eingeben.';
+            } else {
+                $pdo->prepare('INSERT INTO ratings (movie_id, name, score) VALUES (?, ?, ?)')
+                    ->execute([$movie['id'], $name, $score]);
+                rl_hit('rating');
+                setcookie($cookie, '1', [
+                    'expires'  => time() + 31536000,
+                    'path'     => $cookiePath,
+                    'httponly' => true,
+                    'secure'   => $https,
+                    'samesite' => 'Lax',
+                ]);
+                $done = true;
+            }
         }
     }
 }
@@ -93,7 +97,7 @@ if ($movie && $movie['is_open']) {
     </form>
   <?php else: ?>
     <form method="post">
-      <label>Name (optional)<input type="text" name="name" maxlength="60" placeholder="Anonym"></label>
+      <label>Name<input type="text" name="name" maxlength="60" required></label>
       <label>Bewertung
         <select name="score" required>
           <option value="">–</option>

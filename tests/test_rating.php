@@ -19,6 +19,9 @@ ok(valid_score('7abc') === false, 'score 7abc abgelehnt');
 ok(valid_score('') === false, 'leerer score abgelehnt');
 ok(valid_score('7.5') === false, 'score 7.5 abgelehnt');
 
+ok(valid_name(' Max ') === 'Max', 'name wird getrimmt');
+ok(valid_name('   ') === false, 'leerer name abgelehnt');
+
 ok(movie_avg(['rating_count' => 0, 'rating_avg' => null, 'legacy_avg' => '6.5']) === 6.5, 'fallback auf legacy_avg');
 ok(movie_avg(['rating_count' => 0, 'rating_avg' => null, 'legacy_avg' => null]) === null, 'keine Wertung');
 ok(movie_avg(['rating_count' => 2, 'rating_avg' => '7.5', 'legacy_avg' => '3.0']) === 7.5, 'echte Wertung schlaegt legacy');
